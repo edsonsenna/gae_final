@@ -39,7 +39,7 @@ public class UserController {
             return new ResponseEntity<User>(userRepository.saveUser(user),
                     HttpStatus.OK);
         } catch (UserAlreadyExistsException e) {
-            return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -65,7 +65,7 @@ public class UserController {
             } catch (UserNotFoundException e) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             } catch (UserAlreadyExistsException e) {
-                return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
         } else {
             return new ResponseEntity<User>(HttpStatus.BAD_REQUEST);
@@ -79,6 +79,23 @@ public class UserController {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         if (hasRoleAdmin || userDetails.getUsername().equals(email)) {
             Optional<User> optUser = userRepository.getByEmail(email);
+            if (optUser.isPresent()) {
+                return new ResponseEntity<User>(optUser.get(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+        } else {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+    }
+
+    @GetMapping("/bycpf")
+    public ResponseEntity<User> getUserByCpf(@RequestParam String cpf,
+                                               Authentication authentication) {
+        boolean hasRoleAdmin = CheckRole.hasRoleAdmin(authentication);
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        if (hasRoleAdmin || userDetails.getUsername().equals(cpf)) {
+            Optional<User> optUser = userRepository.getByCpf(cpf);
             if (optUser.isPresent()) {
                 return new ResponseEntity<User>(optUser.get(), HttpStatus.OK);
             } else {
