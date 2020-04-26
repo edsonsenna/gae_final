@@ -171,8 +171,13 @@ public class UserRepository {
         return this.getBy("email", email);
     }
 
-    public Optional<User> getByCpf(String cpf) {
-        return this.getBy("cpf", cpf);
+    public Optional<User> getByCpf(String cpf) throws UserNotFoundException {
+        Optional<User> user = this.getBy("cpf", cpf);
+        if(user.isPresent()) {
+            return user;
+        } else {
+            throw new UserNotFoundException("Usuário não encontrado.");
+        }
     }
 
     private Optional<User> getBy(String property, String value) {

@@ -72,6 +72,7 @@ public class UserController {
         }
     }
 
+    @PreAuthorize("hasRole('USER')	or	hasRole('ADMIN')")
     @GetMapping("/byemail")
     public ResponseEntity<User> getUserByEmail(@RequestParam String email,
                                                Authentication authentication) {
@@ -89,31 +90,40 @@ public class UserController {
         }
     }
 
+    @PreAuthorize("hasRole('USER')	or	hasRole('ADMIN')")
     @GetMapping("/bycpf")
     public ResponseEntity<User> getUserByCpf(@RequestParam String cpf,
                                                Authentication authentication) {
         boolean hasRoleAdmin = CheckRole.hasRoleAdmin(authentication);
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         if (hasRoleAdmin || userDetails.getUsername().equals(cpf)) {
-            Optional<User> optUser = userRepository.getByCpf(cpf);
-            if (optUser.isPresent()) {
-                return new ResponseEntity<User>(optUser.get(), HttpStatus.OK);
-            } else {
+            try {
+                Optional<User> optUser = userRepository.getByCpf(cpf);
+                if (optUser.isPresent()) {
+                    return new ResponseEntity<User>(optUser.get(), HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                }
+            } catch (UserNotFoundException e) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
+
         } else {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
     }
 
-    @DeleteMapping(path = "/byemail")
-    public ResponseEntity<User> deleteUser(
-            @RequestParam("email") String email, Authentication authentication) {
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping(path = "/bycpf")
+    public ResponseEntity<User> deleteUserByCpf(
+            @RequestParam("cpf") String cpf, Authentication authentication) {
         try {
             boolean hasRoleAdmin = CheckRole.hasRoleAdmin(authentication);
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            if (hasRoleAdmin || userDetails.getUsername().equals(email)) {
-                return new ResponseEntity<User>(userRepository.deleteUser(email),
+            Optional<User> userToRemove = userRepository.getByCpf(cpf);
+            if (hasRoleAdmin && !userDetails.getUsername().equals(userToRemove.get().getEmail())) {
+
+                return new ResponseEntity<User>(userRepository.deleteUser(cpf),
                         HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
