@@ -20,8 +20,8 @@ public class User implements Serializable, UserDetails {
     private Date lastFCMRegister;
     private String role;
     private String cpf;
-    private int salesId;
-    private int crmId;
+    private String salesId;
+    private String crmId;
     private boolean enabled;
 
     @JsonIgnore
@@ -119,19 +119,19 @@ public class User implements Serializable, UserDetails {
         this.cpf = cpf;
     }
 
-    public int getSalesId() {
+    public String getSalesId() {
         return salesId;
     }
 
-    public void setSalesId(int salesId) {
+    public void setSalesId(String salesId) {
         this.salesId = salesId;
     }
 
-    public int getCrmId() {
+    public String getCrmId() {
         return crmId;
     }
 
-    public void setCrmId(int crmId) {
+    public void setCrmId(String crmId) {
         this.crmId = crmId;
     }
 

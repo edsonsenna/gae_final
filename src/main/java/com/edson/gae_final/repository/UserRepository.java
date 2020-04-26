@@ -51,11 +51,13 @@ public class UserRepository {
                 adminUser.setEnabled(true);
                 adminUser.setPassword("matilde");
                 adminUser.setEmail("matilde@siecola.com.br");
+                adminUser.setCpf("233.234.234-54");
+                adminUser.setSalesId("1");
+                adminUser.setCrmId("1");
                 this.saveUser(adminUser);
             }
-        } catch (UserAlreadyExistsException | UserNotFoundException e
-        ) {
-            log.severe("Falha	ao	criar	usuário	ADMIN");
+        } catch (UserAlreadyExistsException | UserNotFoundException e) {
+            log.severe("Falha ao criar usuário ADMIN");
         }
     }
 
@@ -84,8 +86,8 @@ public class UserRepository {
         user.setRole((String) userEntity.getProperty(PROPERTY_ROLE));
         user.setEnabled((Boolean) userEntity.getProperty(PROPERTY_ENABLED));
         user.setCpf((String) userEntity.getProperty(PROPERTY_CPF));
-        user.setCrmId((int) userEntity.getProperty(PROPERTY_CRM_ID));
-        user.setSalesId((int) userEntity.getProperty((PROPERTY_SALES_ID)));
+        user.setCrmId((String) userEntity.getProperty(PROPERTY_CRM_ID));
+        user.setSalesId((String) userEntity.getProperty((PROPERTY_SALES_ID)));
         return user;
     }
 
@@ -106,27 +108,31 @@ public class UserRepository {
         }
     }
 
-    private boolean checkEmailOrCpfUsage(String email, String cpf) {
+    private boolean checkEmailOrCpfUsage(User user) {
         DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
         Query.Filter filter = new Query.CompositeFilter(Query.CompositeFilterOperator.OR, Arrays.<Query.Filter>asList(
                 new Query.FilterPredicate(PROPERTY_EMAIL,
-                        Query.FilterOperator.EQUAL, email),
+                        Query.FilterOperator.EQUAL, user.getEmail()),
                 new Query.FilterPredicate(PROPERTY_CPF,
-                        Query.FilterOperator.EQUAL, cpf)
+                        Query.FilterOperator.EQUAL, user.getCpf())
         ));
         Query query = new Query(USER_KIND).setFilter(filter);
         Entity userEntity = datastore.prepare(query).asSingleEntity();
         if (userEntity == null) {
             return false;
         } else {
-            return true;
+            if (user.getId() == null) {
+                return true;
+            } else {
+                return userEntity.getKey().getId() != user.getId();
+            }
         }
     }
 
     public User saveUser(User user) throws UserAlreadyExistsException {
         DatastoreService datastore = DatastoreServiceFactory
                 .getDatastoreService();
-        if (!checkEmailOrCpfUsage(user.getEmail(), user.getCpf())) {
+        if (!checkEmailOrCpfUsage(user)) {
             Key userKey = KeyFactory.createKey(USER_KIND, USER_KEY);
             Entity userEntity = new Entity(USER_KIND, userKey);
             user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -141,7 +147,7 @@ public class UserRepository {
 
     public User updateUser(User user, String email)
             throws UserNotFoundException, UserAlreadyExistsException {
-        if (!checkEmailOrCpfUsage(user.getEmail(), user.getCpf())) {
+        if (!checkEmailOrCpfUsage(user)) {
             DatastoreService datastore = DatastoreServiceFactory
                     .getDatastoreService();
             Query.Filter emailFilter = new Query.FilterPredicate(PROPERTY_EMAIL,
@@ -170,7 +176,7 @@ public class UserRepository {
     }
 
     private Optional<User> getBy(String property, String value) {
-        final String PROPERTY_NAME = property == "email" ? "PROPERTY_EMAIL" : (property == "cpf" ? "PROPERTY_CPF" : "");
+        final String PROPERTY_NAME = property == "email" ? PROPERTY_EMAIL : (property == "cpf" ? PROPERTY_CPF : "");
 
         if (PROPERTY_NAME == "") {
             return Optional.empty();

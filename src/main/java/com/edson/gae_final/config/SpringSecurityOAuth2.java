@@ -22,8 +22,10 @@ public class SpringSecurityOAuth2 extends AuthorizationServerConfigurerAdapter {
     @Autowired
     @Qualifier("userDetailsService")
     private UserDetailsService userDetailsService;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
+
     @Autowired
     private AuthenticationManager authenticationManager;
 
@@ -37,9 +39,9 @@ public class SpringSecurityOAuth2 extends AuthorizationServerConfigurerAdapter {
     @Override
     public void configure(ClientDetailsServiceConfigurer clients)
             throws Exception {
+
         clients.inMemory()
-                .withClient("siecola").secret(passwordEncoder.encode(
-                "matilde"))
+                .withClient("siecola").secret(passwordEncoder.encode("matilde"))
                 .accessTokenValiditySeconds(3600)
                 .scopes("read", "write")
                 .authorizedGrantTypes("password")
