@@ -41,6 +41,7 @@ public class MessageController {
                     .build();
             FirebaseApp.initializeApp(options);
             log.info("FirebaseApp	configurado");
+            log.info(options.toString());
         } catch (IOException e) {
             log.info("Falha	ao	configurar	FirebaseApp");
         }
@@ -51,32 +52,44 @@ public class MessageController {
     public ResponseEntity<String> sendOrderUpdate(
             @RequestBody UpdateInfo updateInfo) throws UserNotFoundException {
 
-        if (updateInfo.getCpf() == null) {
+        if (updateInfo.getCpf() == null || updateInfo.getCpf().isEmpty()) {
             return new ResponseEntity<String>("CPF é obrigatório!", HttpStatus.BAD_REQUEST);
+        } else if(updateInfo.getSalesId() == null || updateInfo.getSalesId().isEmpty()) {
+            return new ResponseEntity<String>("Id do provedor de vendas é obrigatório!", HttpStatus.BAD_REQUEST);
+        } else if(updateInfo.getCrmId() == null || updateInfo.getCrmId().isEmpty()) {
+            return new ResponseEntity<String>("Id do provedor de crm é obrigatório!", HttpStatus.BAD_REQUEST);
+        } else if(updateInfo.getMessageSource() == null || updateInfo.getMessageSource().isEmpty()) {
+            return new ResponseEntity<String>("Fonte da mensagem é obrigatório!", HttpStatus.BAD_REQUEST);
+        } else if(updateInfo.getOrderStatus() == null || updateInfo.getOrderStatus().isEmpty()) {
+            return new ResponseEntity<String>("Status do pedido é obrigatório!", HttpStatus.BAD_REQUEST);
         }
 
-        Optional<User> optUser = userRepository.getByCpf(updateInfo.getCpf());
-        if (optUser.isPresent()) {
+        try {
+            Optional<User> optUser = userRepository.getByCpf(updateInfo.getCpf());
             User user = optUser.get();
             String registrationToken = user.getFcmRegId();
-            try {
-                Message message = Message.builder()
-                        .putData("updateInfo", objectMapper.writeValueAsString(updateInfo))
-                        .setToken(registrationToken)
-                        .build();
-                String response = FirebaseMessaging.getInstance().send(message);
-                log.info("Mensagem	enviada	ao	pedido	" + updateInfo.getSalesId());
-                log.info("Reposta	do	FCM:	" + response);
-                return new ResponseEntity<String>("Mensagem	enviada	com	o pedido: "
-                        + updateInfo.getSalesId(), HttpStatus.OK);
-            } catch (FirebaseMessagingException | JsonProcessingException e) {
-                log.severe("Falha	ao	enviar	mensagem	pelo	FCM:	" + e.getMessage());
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            log.info("FCM do usuario com CPF " + updateInfo.getCpf() + " e " + registrationToken);
+            if(registrationToken == null || registrationToken.isEmpty()) {
+                return new ResponseEntity<String>("Usuário não possui um FCM válido", HttpStatus.BAD_REQUEST);
+            } else {
+                try {
+                    Message message = Message.builder()
+                            .putData("salesMessage", objectMapper.writeValueAsString(updateInfo))
+                            .setToken(registrationToken)
+                            .build();
+                    String response = FirebaseMessaging.getInstance().send(message);
+                    log.info("Mensagem	enviada	ao	pedido: " + updateInfo.getSalesId());
+                    log.info("Reposta	do	FCM:	" + response);
+                    return new ResponseEntity<String>("Mensagem enviada com sucesso: "
+                            + objectMapper.writeValueAsString(updateInfo), HttpStatus.OK);
+                } catch (FirebaseMessagingException | JsonProcessingException e) {
+                    log.severe("Falha	ao	enviar	mensagem	pelo	FCM:	" + e.getMessage());
+                    return new ResponseEntity<String>(e.getMessage(), HttpStatus.PRECONDITION_FAILED);
+                }
             }
-
-        } else {
+        } catch (UserNotFoundException e) {
             log.severe("Usuário	não	encontrado");
-            return new ResponseEntity<String>("Usuário	não	encontrado", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<String>(e.getMessage(), HttpStatus.NOT_FOUND);
         }
 
     }
