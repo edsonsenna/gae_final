@@ -3,9 +3,11 @@ package com.edson.gae_final.controller;
 import com.edson.gae_final.exception.UserNotFoundException;
 import com.edson.gae_final.model.UpdateInfo;
 import com.edson.gae_final.model.User;
+import com.edson.gae_final.repository.ProductInterestRepository;
 import com.edson.gae_final.repository.UserRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.Http;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -27,6 +30,8 @@ import java.util.logging.Logger;
 @RequestMapping(path = "/api/message")
 public class MessageController {
     private static final Logger log = Logger.getLogger("MessageController");
+    @Autowired
+    private ProductInterestRepository productInterestRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -46,6 +51,17 @@ public class MessageController {
             log.info("Falha	ao	configurar	FirebaseApp");
         }
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping(path = "/sendpriceupdate")
+    public ResponseEntity<List<String>> sendPriceUpdate(
+            @RequestParam String productSalesId,
+            @RequestParam Double price )  {
+
+        List<String> users = this.productInterestRepository.findInterestedUsers(productSalesId, price);
+        return new ResponseEntity<List<String>>(users, HttpStatus.OK);
+    }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(path = "/sendupdate")

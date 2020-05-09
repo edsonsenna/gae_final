@@ -109,11 +109,35 @@ public class ProductInterestRepository {
         productInterest.setProductSalesId(productSalesId);
         Entity productInterestEntity = this.getProductInterestIfAlreadyExists(productInterest);
         if (productInterestEntity == null) {
-            // TODO exception
             return null;
         } else {
             datastore.delete(productInterestEntity.getKey());
             return entityToProductInterest(productInterestEntity);
         }
+    }
+
+    public List<String> findInterestedUsers(String productSalesId, Double price) {
+        DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+        Query.Filter filter = new Query.CompositeFilter(Query.CompositeFilterOperator.AND, Arrays.<Query.Filter>asList(
+                new Query.FilterPredicate(
+                        PROPERTY_PRODUCT_SALES_ID,
+                        Query.FilterOperator.EQUAL, productSalesId
+                ),
+                new Query.FilterPredicate(
+                        PROPERTY_PRICE,
+                        Query.FilterOperator.LESS_THAN_OR_EQUAL, price
+                )
+        ));
+        Query query = new Query(PRODUCT_INTEREST_KIND).setFilter(filter);
+        logger.info("Filtro criado!");
+        List<Entity> productInterestsEntities = datastore.prepare(query).asList(
+                FetchOptions.Builder.withDefaults()
+        );
+        List<String> users = new ArrayList<>();
+        for (Entity productInterestsEntity : productInterestsEntities) {
+            ProductInterest productInterest = entityToProductInterest(productInterestsEntity);
+            users.add(productInterest.getCpf());
+        }
+        return users;
     }
 }
