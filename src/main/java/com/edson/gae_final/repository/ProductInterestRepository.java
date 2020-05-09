@@ -17,7 +17,7 @@ public class ProductInterestRepository {
     @Autowired
     private UserRepository userRepository;
 
-    private static final Logger log = Logger.getLogger("ProductInterestRepository");
+    private static final Logger logger = Logger.getLogger("ProductInterestRepository");
 
     private static final String PRODUCT_INTEREST_KIND = "ProductInterests";
     private static final String PRODUCT_INTEREST_KEY = "productInterestKey";
@@ -69,15 +69,13 @@ public class ProductInterestRepository {
                 Key productInterestKey = KeyFactory.createKey(PRODUCT_INTEREST_KIND, PRODUCT_INTEREST_KEY);
                 productInterestEntity = new Entity(PRODUCT_INTEREST_KIND, productInterestKey);
                 productInterestToEntity(productInterest, productInterestEntity);
-                datastore.put(productInterestEntity);
-                return entityToProductInterest(productInterestEntity);
             } else {
-                // TODO: Update
+                productInterestEntity.setProperty(PROPERTY_PRICE, productInterest.getPrice());
             }
+            datastore.put(productInterestEntity);
+            return entityToProductInterest(productInterestEntity);
         } catch (UserNotFoundException e) {
             throw new UserNotFoundException("Usuário com CPF: "+productInterest.getCpf()+" não encontrado");
         }
-
-        return null;
     }
 }
