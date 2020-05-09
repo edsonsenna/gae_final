@@ -7,7 +7,9 @@ import com.google.appengine.api.datastore.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -77,5 +79,25 @@ public class ProductInterestRepository {
         } catch (UserNotFoundException e) {
             throw new UserNotFoundException("Usuário com CPF: "+productInterest.getCpf()+" não encontrado");
         }
+    }
+
+    public List<ProductInterest> getUserProductsInterests(String cpf) {
+        List<ProductInterest> productInterests = new ArrayList<>();
+        DatastoreService datastore = DatastoreServiceFactory
+                .getDatastoreService();
+        Query query;
+        Query.Filter filter = new Query.FilterPredicate(
+                PROPERTY_CPF,
+                Query.FilterOperator.EQUAL, cpf
+        );
+        query = new Query(PRODUCT_INTEREST_KIND).setFilter(filter);
+        List<Entity> productInterestsEntities = datastore.prepare(query).asList(
+                FetchOptions.Builder.withDefaults()
+        );
+        for(Entity productInterestsEntity: productInterestsEntities) {
+            ProductInterest productInterest = entityToProductInterest(productInterestsEntity);
+            productInterests.add(productInterest);
+        }
+        return productInterests;
     }
 }

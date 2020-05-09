@@ -79,15 +79,18 @@ public class UserController {
         boolean hasRoleAdmin = CheckRole.hasRoleAdmin(authentication);
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         if (hasRoleAdmin || userDetails.getUsername().equals(email)) {
-            Optional<User> optUser = userRepository.getByEmail(email);
-            if (optUser.isPresent()) {
-                return new ResponseEntity<User>(optUser.get(), HttpStatus.OK);
-            } else {
+            try {
+                Optional<User> optUser = userRepository.getByEmail(email);
+                if (optUser.isPresent()) {
+                    return new ResponseEntity<User>(optUser.get(), HttpStatus.OK);
+                }
+            } catch(UserNotFoundException e) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
         } else {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
+        return null;
     }
 
     @PreAuthorize("hasRole('USER')	or	hasRole('ADMIN')")

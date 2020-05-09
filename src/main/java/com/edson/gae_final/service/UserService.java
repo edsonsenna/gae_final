@@ -1,5 +1,6 @@
 package com.edson.gae_final.service;
 
+import com.edson.gae_final.exception.UserNotFoundException;
 import com.edson.gae_final.model.User;
 import com.edson.gae_final.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +19,16 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Optional<User> optUser =
-                userRepository.getByEmail(email);
-        if (optUser.isPresent()) {
-            return optUser.get();
-        } else {
+
+        try{
+            Optional<User> optUser =
+                    userRepository.getByEmail(email);
+            if (optUser.isPresent()) {
+                return optUser.get();
+            }
+        } catch (UserNotFoundException e) {
             throw new UsernameNotFoundException("Usuário	não	encontrado");
         }
+        return null;
     }
 }

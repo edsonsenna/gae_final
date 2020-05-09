@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
+import javax.swing.text.html.Option;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -37,8 +38,8 @@ public class UserRepository {
     @PostConstruct
     public void init() {
         User adminUser;
-        Optional<User> optAdminUser = this.getByEmail("matilde@siecola.com.br");
         try {
+            Optional<User> optAdminUser = this.getByEmail("matilde@siecola.com.br");
             if (optAdminUser.isPresent()) {
                 adminUser = optAdminUser.get();
                 if (!adminUser.getRole().equals("ROLE_ADMIN")) {
@@ -167,8 +168,13 @@ public class UserRepository {
         }
     }
 
-    public Optional<User> getByEmail(String email) {
-        return this.getBy("email", email);
+    public Optional<User> getByEmail(String email) throws UserNotFoundException {
+        Optional<User> user= this.getBy("email", email);
+        if(user.isPresent()) {
+            return user;
+        } else {
+            throw new UserNotFoundException("Usuário não encontrado.");
+        }
     }
 
     public Optional<User> getByCpf(String cpf) throws UserNotFoundException {
