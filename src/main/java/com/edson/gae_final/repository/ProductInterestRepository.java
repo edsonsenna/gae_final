@@ -61,13 +61,13 @@ public class ProductInterestRepository {
         return productInterestEntity;
     }
 
-    public ProductInterest saveOrUpdateProductInterest(ProductInterest productInterest) throws UserNotFoundException{
+    public ProductInterest saveOrUpdateProductInterest(ProductInterest productInterest) throws UserNotFoundException {
         DatastoreService datastore = DatastoreServiceFactory
                 .getDatastoreService();
         try {
             Optional<User> user = this.userRepository.getByCpf(productInterest.getCpf());
             Entity productInterestEntity = this.getProductInterestIfAlreadyExists(productInterest);
-            if(productInterestEntity == null) {
+            if (productInterestEntity == null) {
                 Key productInterestKey = KeyFactory.createKey(PRODUCT_INTEREST_KIND, PRODUCT_INTEREST_KEY);
                 productInterestEntity = new Entity(PRODUCT_INTEREST_KIND, productInterestKey);
                 productInterestToEntity(productInterest, productInterestEntity);
@@ -77,7 +77,7 @@ public class ProductInterestRepository {
             datastore.put(productInterestEntity);
             return entityToProductInterest(productInterestEntity);
         } catch (UserNotFoundException e) {
-            throw new UserNotFoundException("Usuário com CPF: "+productInterest.getCpf()+" não encontrado");
+            throw new UserNotFoundException("Usuário com CPF: " + productInterest.getCpf() + " não encontrado");
         }
     }
 
@@ -94,10 +94,26 @@ public class ProductInterestRepository {
         List<Entity> productInterestsEntities = datastore.prepare(query).asList(
                 FetchOptions.Builder.withDefaults()
         );
-        for(Entity productInterestsEntity: productInterestsEntities) {
+        for (Entity productInterestsEntity : productInterestsEntities) {
             ProductInterest productInterest = entityToProductInterest(productInterestsEntity);
             productInterests.add(productInterest);
         }
         return productInterests;
+    }
+
+    public ProductInterest deleteUserProductInterest(String cpf, String productSalesId) {
+        DatastoreService datastore = DatastoreServiceFactory
+                .getDatastoreService();
+        ProductInterest productInterest = new ProductInterest();
+        productInterest.setCpf(cpf);
+        productInterest.setProductSalesId(productSalesId);
+        Entity productInterestEntity = this.getProductInterestIfAlreadyExists(productInterest);
+        if (productInterestEntity == null) {
+            // TODO exception
+            return null;
+        } else {
+            datastore.delete(productInterestEntity.getKey());
+            return entityToProductInterest(productInterestEntity);
+        }
     }
 }

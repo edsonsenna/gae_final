@@ -40,17 +40,19 @@ public class ProductInterestController {
 
     @PreAuthorize("hasRole('USER')	or hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<List<ProductInterest>> getUsers(
+    public ResponseEntity<List<ProductInterest>> getUserProductsInterests(
             @RequestParam String cpf,
             Authentication authentication
     ) {
         boolean hasRoleAdmin = CheckRole.hasRoleAdmin(authentication);
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         try {
-            Optional<User> user = this.userRepository.getByEmail(userDetails.getUsername());
-            if(user.isPresent()) {
-                User currentUser = user.get();
-                if (hasRoleAdmin || currentUser.getCpf().equals(cpf)) {
+            Optional<User> optUser = this.userRepository.getByEmail(userDetails.getUsername());
+            Optional<User> paramOptUser = this.userRepository.getByCpf(cpf);
+            if (optUser.isPresent() && paramOptUser.isPresent()) {
+                User user = optUser.get();
+                User paramUser = paramOptUser.get();
+                if (hasRoleAdmin || user.getCpf().equals(paramUser.getCpf())) {
                     return new ResponseEntity<List<ProductInterest>>(productInterestRepository.getUserProductsInterests(cpf), HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -63,5 +65,38 @@ public class ProductInterestController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping
+    public ResponseEntity<ProductInterest> deleteUserProductInterest(
+            @RequestParam String cpf,
+            @RequestParam String productSalesId,
+            Authentication authentication
+    ) {
+        boolean hasRoleAdmin = CheckRole.hasRoleAdmin(authentication);
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        try {
+            Optional<User> optUser = this.userRepository.getByEmail(userDetails.getUsername());
+            Optional<User> paramOptUser = this.userRepository.getByCpf(cpf);
+            if (optUser.isPresent() && paramOptUser.isPresent()) {
+                User user = optUser.get();
+                User paramUser = paramOptUser.get();
+                if (hasRoleAdmin || user.getCpf().equals(paramUser.getCpf())) {
+                    ProductInterest deletedProductInterest = this.productInterestRepository.deleteUserProductInterest(cpf, productSalesId);
+                    if (deletedProductInterest == null) {
+                        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+                    }
+                    return new ResponseEntity<ProductInterest>(deletedProductInterest, HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
+        } catch (UserNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 }
