@@ -125,11 +125,10 @@ public class ProductInterestRepository {
                 ),
                 new Query.FilterPredicate(
                         PROPERTY_PRICE,
-                        Query.FilterOperator.LESS_THAN_OR_EQUAL, price
+                        Query.FilterOperator.GREATER_THAN_OR_EQUAL, price
                 )
         ));
         Query query = new Query(PRODUCT_INTEREST_KIND).setFilter(filter);
-        logger.info("Filtro criado!");
         List<Entity> productInterestsEntities = datastore.prepare(query).asList(
                 FetchOptions.Builder.withDefaults()
         );
@@ -138,6 +137,7 @@ public class ProductInterestRepository {
             ProductInterest productInterest = entityToProductInterest(productInterestsEntity);
             users.add(productInterest.getCpf());
         }
-        return users;
+        List<String> fcms = this.userRepository.getFcmUsersByCpf(users);
+        return fcms;
     }
 }

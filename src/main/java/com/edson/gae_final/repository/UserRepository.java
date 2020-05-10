@@ -236,4 +236,22 @@ public class UserRepository {
             throw new UserNotFoundException("Usuário	" + cpf + "	não	encontrado");
         }
     }
+
+    public List<String> getFcmUsersByCpf(List<String> cpfs) {
+        List<String> fcms = new ArrayList<>();
+        for(String userCpf: cpfs) {
+            try {
+                Optional<User> optUser = this.getByCpf(userCpf);
+                if(optUser.isPresent()) {
+                    User user = optUser.get();
+                    if(user.getFcmRegId() != null && !user.getFcmRegId().isEmpty()) {
+                        fcms.add(user.getFcmRegId());
+                    }
+                }
+            } catch (UserNotFoundException e) {
+                log.info(e.getMessage());
+            }
+        }
+        return fcms;
+    }
 }

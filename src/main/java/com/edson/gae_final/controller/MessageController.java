@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -57,9 +58,25 @@ public class MessageController {
     public ResponseEntity<List<String>> sendPriceUpdate(
             @RequestParam String productSalesId,
             @RequestParam Double price )  {
-
         List<String> users = this.productInterestRepository.findInterestedUsers(productSalesId, price);
-        return new ResponseEntity<List<String>>(users, HttpStatus.OK);
+        List<String> messagesSent = new ArrayList<>();
+        for(String userFcm: users) {
+            try {
+                String dataMessage = "Nova oferta para o produto " + productSalesId + " com preco de " + price;
+                Message message = Message.builder()
+                        .putData("salesMessage", dataMessage)
+                        .setToken(userFcm)
+                        .build();
+                String response = FirebaseMessaging.getInstance().send(message);
+                log.info("Mensagem	enviada: " + dataMessage);
+                log.info("Reposta	do	FCM:	" + response);
+                messagesSent.add("Mensagem	enviada com sucesso: " + dataMessage);
+            } catch (FirebaseMessagingException e) {
+                log.severe("Falha	ao	enviar	mensagem	pelo	FCM:	" + e.getMessage());
+                messagesSent.add("Falha	ao	enviar	mensagem	pelo	FCM:	" + e.getMessage());
+            }
+        }
+        return new ResponseEntity<List<String>>(messagesSent, HttpStatus.OK);
     }
 
 
