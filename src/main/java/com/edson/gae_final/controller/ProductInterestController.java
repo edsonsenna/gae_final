@@ -29,12 +29,28 @@ public class ProductInterestController {
 
     @PreAuthorize("hasRole('USER')	or	hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<ProductInterest> saveProductInterest(@RequestBody ProductInterest productInterest) {
+    public ResponseEntity<ProductInterest> saveProductInterest(@RequestBody ProductInterest productInterest, Authentication authentication) {
+        boolean hasRoleAdmin = CheckRole.hasRoleAdmin(authentication);
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         try {
-            return new ResponseEntity<ProductInterest>(productInterestRepository.saveOrUpdateProductInterest(productInterest),
-                    HttpStatus.OK);
+            Optional<User> optUser = this.userRepository.getByEmail(userDetails.getUsername());
+            Optional<User> paramOptUser = this.userRepository.getByCpf(productInterest.getCpf());
+            if (optUser.isPresent() && paramOptUser.isPresent()) {
+                User user = optUser.get();
+                User paramUser = paramOptUser.get();
+                if (hasRoleAdmin || user.getCpf().equals(paramUser.getCpf())) {
+                    ProductInterest response = productInterestRepository.saveOrUpdateProductInterest(productInterest);
+                    return new ResponseEntity<ProductInterest>(response,
+                            HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
         } catch (UserNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 

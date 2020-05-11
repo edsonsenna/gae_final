@@ -22,6 +22,7 @@ public class User implements Serializable, UserDetails {
     private String cpf;
     private String salesId;
     private String crmId;
+    private Date lastModified;
     private boolean enabled;
 
     @JsonIgnore
@@ -141,5 +142,13 @@ public class User implements Serializable, UserDetails {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public Date getLastModified() {
+        return lastModified;
+    }
+
+    public void setLastModified(Date lastModified) {
+        this.lastModified = lastModified;
     }
 }

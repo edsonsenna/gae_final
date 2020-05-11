@@ -65,20 +65,27 @@ public class ProductInterestRepository {
         DatastoreService datastore = DatastoreServiceFactory
                 .getDatastoreService();
         try {
-            Optional<User> user = this.userRepository.getByCpf(productInterest.getCpf());
-            Entity productInterestEntity = this.getProductInterestIfAlreadyExists(productInterest);
-            if (productInterestEntity == null) {
-                Key productInterestKey = KeyFactory.createKey(PRODUCT_INTEREST_KIND, PRODUCT_INTEREST_KEY);
-                productInterestEntity = new Entity(PRODUCT_INTEREST_KIND, productInterestKey);
-                productInterestToEntity(productInterest, productInterestEntity);
-            } else {
-                productInterestEntity.setProperty(PROPERTY_PRICE, productInterest.getPrice());
+            Optional<User> optUser = this.userRepository.getByCpf(productInterest.getCpf());
+            if(optUser.isPresent()) {
+                User user = optUser.get();
+                if (user.getCpf().equals(productInterest.getCpf())) {
+                    Entity productInterestEntity = this.getProductInterestIfAlreadyExists(productInterest);
+                    if (productInterestEntity == null) {
+                        Key productInterestKey = KeyFactory.createKey(PRODUCT_INTEREST_KIND, PRODUCT_INTEREST_KEY);
+                        productInterestEntity = new Entity(PRODUCT_INTEREST_KIND, productInterestKey);
+                        productInterestToEntity(productInterest, productInterestEntity);
+                    } else {
+                        productInterestEntity.setProperty(PROPERTY_PRICE, productInterest.getPrice());
+                    }
+                    datastore.put(productInterestEntity);
+                    return entityToProductInterest(productInterestEntity);
+                }
+                return null;
             }
-            datastore.put(productInterestEntity);
-            return entityToProductInterest(productInterestEntity);
         } catch (UserNotFoundException e) {
             throw new UserNotFoundException("Usuário com CPF: " + productInterest.getCpf() + " não encontrado");
         }
+        return null;
     }
 
     public List<ProductInterest> getUserProductsInterests(String cpf) {

@@ -9,7 +9,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
-import javax.swing.text.html.Option;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -31,6 +30,7 @@ public class UserRepository {
     private static final String PROPERTY_CPF = "cpf";
     private static final String PROPERTY_SALES_ID = "salesId";
     private static final String PROPERTY_CRM_ID = "crmId";
+    private static final String PROPERTY_LAST_MODIFIED = "lastModified";
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -55,6 +55,7 @@ public class UserRepository {
                 adminUser.setCpf("233.234.234-54");
                 adminUser.setSalesId("1");
                 adminUser.setCrmId("1");
+                adminUser.setLastModified(new Date());
                 this.saveUser(adminUser);
             }
         } catch (UserAlreadyExistsException | UserNotFoundException e) {
@@ -74,6 +75,7 @@ public class UserRepository {
         userEntity.setProperty(PROPERTY_CPF, user.getCpf());
         userEntity.setProperty(PROPERTY_CRM_ID, user.getCrmId());
         userEntity.setProperty(PROPERTY_SALES_ID, user.getSalesId());
+        userEntity.setProperty(PROPERTY_LAST_MODIFIED, user.getLastModified());
     }
 
     private User entityToUser(Entity userEntity) {
@@ -89,6 +91,7 @@ public class UserRepository {
         user.setCpf((String) userEntity.getProperty(PROPERTY_CPF));
         user.setCrmId((String) userEntity.getProperty(PROPERTY_CRM_ID));
         user.setSalesId((String) userEntity.getProperty((PROPERTY_SALES_ID)));
+        user.setLastModified((Date) userEntity.getProperty(PROPERTY_LAST_MODIFIED));
         return user;
     }
 
@@ -137,6 +140,7 @@ public class UserRepository {
             Key userKey = KeyFactory.createKey(USER_KIND, USER_KEY);
             Entity userEntity = new Entity(USER_KIND, userKey);
             user.setPassword(passwordEncoder.encode(user.getPassword()));
+            user.setLastModified(new Date());
             userToEntity(user, userEntity);
             datastore.put(userEntity);
             user.setId(userEntity.getKey().getId());
@@ -156,6 +160,7 @@ public class UserRepository {
             Query query = new Query(USER_KIND).setFilter(emailFilter);
             Entity userEntity = datastore.prepare(query).asSingleEntity();
             if (userEntity != null) {
+                user.setLastModified(new Date());
                 userToEntity(user, userEntity);
                 datastore.put(userEntity);
                 user.setId(userEntity.getKey().getId());
